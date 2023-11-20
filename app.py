@@ -5,8 +5,6 @@ from flask_cors import CORS
 from flask_mail import Mail, Message
 from pymongo.errors import InvalidOperation, DuplicateKeyError
 import random
-import jwt
-import datetime
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
