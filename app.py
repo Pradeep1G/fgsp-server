@@ -14,6 +14,7 @@ import os
 from werkzeug.utils import secure_filename
 import random
 import string
+from datetime import datetime
 
 
 app=Flask(__name__)
@@ -111,7 +112,8 @@ def generate_password():
 # for doc in collection2.find():
 #     password = generate_password()
 #     collection1.insert_one({"mailId" : doc['University EMAIL ID'], "password":password})
-
+# collection=db.allstaff
+# result = collection.update_many({}, {"$set": {"TOTAL BATCHES": 20}})
 
 @app.route('/guidelist', methods=['GET'])
 def get_Guide_List():
@@ -185,6 +187,11 @@ def update_vacancies_data():
 @app.route('/addNewStudent', methods=['PUT'])
 def addNewStudent():
     data = request.json
+
+    if 'messages' not in data:
+        data['messages'] = []
+
+
     collection = db.regstudents
     result = collection.insert_one(data)
     if result:
@@ -202,6 +209,8 @@ def update_guides_students_data():
     phone_no = request.form.get('phoneNo')
     name = request.form.get('name')
     guide_mail_id = request.form.get('GuideMailId')
+    address = request.form.get("address")
+    section = request.form.get("section")
 
     # Filter to find the document by GuideMailId
     filter_query = {"University EMAIL ID": guide_mail_id}
@@ -229,7 +238,9 @@ def update_guides_students_data():
                         "regNo": reg_no,
                         "mailId": mail_id,
                         "phoneNo": phone_no,
-                        "name": name
+                        "name": name,
+                        "address": address,
+                        "section": section
                     }
                 }
             }
@@ -312,6 +323,99 @@ def getGuideData():
 
     # print(result)
     return jsonify({"GuideDetails":result, "AllStudents":result2['students']})
+
+
+
+
+@app.route('/checkMail/<string:mailid>', methods=['GET'])
+def Send_otp(mailid):
+    # Get the update data from the request
+    # data = request.get_json()
+
+    otp = random.randint(100000,999999)
+
+    try:
+        msg = Message(f'Your OTP is {otp}',  # Email subject
+                      sender='pradeepgeddada31@gmail.com',  # Replace with your email address
+                      recipients=[mailid])  # Replace with the recipient's email address
+        msg.body = 'This is a test email sent from Flask-Mail'  # Email body
+
+        mail.send(msg)
+        return jsonify({"message":"SENT", "OTP":otp})
+    except Exception as e:
+        print(e)
+        return jsonify({"message":"NOT SENT"})
+    
+
+@app.route("/sendMessage/<string:mailid>", methods=["POST"])
+def sendMessage(mailid):
+
+    data = request.json
+
+    current_time = datetime.now()
+
+# Convert the datetime object to a string in a specific format
+    formatted_time = current_time.strftime("%Y-%m-%d_%H:%M:%S")
+
+    collection = db.regstudents
+    filter_query = {"mailId":mailid}
+    update_query = {
+        "$push" : {
+            "messages" : {
+                formatted_time : data["message"]
+            }
+        }
+    }
+    result = collection.update_one(filter_query, update_query)
+
+
+    if result.modified_count > 0:
+        return jsonify({"message": "SENT"})
+    else:
+        return jsonify({"message":"NOT SENT"})
+    
+
+    
+@app.route("/sendMessageToAll", methods=["POST"])
+def sendMessageToAll():
+
+    data = request.json
+
+    current_time = datetime.now()
+
+# Convert the datetime object to a string in a specific format
+    formatted_time = current_time.strftime("%Y-%m-%d_%H:%M:%S")
+
+    collection = db.regstudents
+    # filter_query = {"mailId":mailid}
+    update_query = {
+        "$push" : {
+            "messages" : {
+                formatted_time : data["message"]
+            }
+        }
+    }
+    # result = collection.update_one(filter_query, update_query)
+
+    for doc in data['mailIds']:
+        print(doc["mailId"])
+        filter_query = {"mailId":doc["mailId"]}
+        result = collection.update_one(filter_query, update_query)
+        
+
+
+
+    print(data)
+
+
+    if result.modified_count > 0:
+        return jsonify({"message": "SENT"})
+    else:
+        return jsonify({"message":"NOT SENT"})
+
+
+    
+
 
 
 
