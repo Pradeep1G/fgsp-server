@@ -126,6 +126,7 @@ def get_Guide_List():
     for document in data:
         result.append({})
         result[i]["id"] = i+1
+        result[i]["SL"] = document["SL"]["NO"]
         result[i]["NAME"] = document["NAME OF THE FACULTY"]
         result[i]["VACANCIES"] = document["TOTAL BATCHES"]
         result[i]["DESIGNATION"] = document["DESIGNATION"]
