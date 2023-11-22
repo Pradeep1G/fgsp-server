@@ -15,7 +15,7 @@ from werkzeug.utils import secure_filename
 import random
 import string
 from datetime import datetime
-import pytz
+
 
 app=Flask(__name__)
 CORS(app)
@@ -353,17 +353,13 @@ def sendMessage(mailid):
 
     data = request.json
 
-    current_time = datetime.now()
-
-# Convert the datetime object to a string in a specific format
-    formatted_time = current_time.strftime("%Y-%m-%d_%H:%M:%S")
 
     collection = db.regstudents
     filter_query = {"mailId":mailid}
     update_query = {
         "$push" : {
             "messages" : {
-                formatted_time : data["message"]
+                data['date'] : data["message"]
             }
         }
     }
@@ -382,24 +378,14 @@ def sendMessageToAll():
 
     data = request.json
 
-    # Specify the time zone for India
-    india_timezone = pytz.timezone('Asia/Kolkata')
 
-    # Get the current time in UTC
-    utc_now = datetime.utcnow()
-
-    # Convert to India Standard Time (IST)
-    india_time = utc_now.replace(tzinfo=pytz.utc).astimezone(india_timezone)
-
-# Convert the datetime object to a string in a specific format
-    formatted_time = india_time.strftime("%Y-%m-%d_%H:%M:%S")
 
     collection = db.regstudents
     # filter_query = {"mailId":mailid}
     update_query = {
         "$push" : {
             "messages" : {
-                formatted_time : data["message"]
+                data['date'] : data["message"]
             }
         }
     }
