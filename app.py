@@ -373,7 +373,7 @@ def getStudentData():
             LatestMessage= studentDetails["messages"][-1]
         else:
             LatestMessage = None
-        OldMessages=studentDetails["messages"][-2:0:-1]
+        OldMessages=studentDetails["messages"][-2::-1]
         
 
         return jsonify({"message":"SUCCESS", "StudentData":data, "LatestMessage":LatestMessage, "OldMessages":OldMessages})
