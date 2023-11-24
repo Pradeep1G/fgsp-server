@@ -191,9 +191,54 @@ def addNewStudent():
     if 'messages' not in data:
         data['messages'] = []
 
+    MailID = data["mailId"]
+    password = f'{data["regNo"]}@{random.randint(1000,9999)}'
+
 
     collection = db.regstudents
     result = collection.insert_one(data)
+
+    try:
+        msg = Message(f'Mentor-Mentee-Selection-Portal',  # Email subject
+                      sender='pradeepgeddada31@gmail.com',  # Replace with your email address
+                      recipients=[MailID])  # Replace with the recipient's email address
+        msg.html = f"""
+        <html>
+        <body>
+            <p>Dear Student,</p>
+            <p>You are successfully registered in Mentor-Mentor-Selection-Portal.</p>
+            <p>Here are your login credentials:</p><br/>
+            <ul>
+            <li>User Mail ID: {data["mailId"]}</li>
+            <li>Password: {password}</li>
+            </ul><br/>
+            <p>You can access the Mentor-Mentee-Selection-Portal with these credentials. Please don't share your credentials with anyone.</p><br/><br/><br/>
+            <p>With Warm Regards,</p>
+            <p>School of Computing,</p>
+            <p>Sathyabama Institute of Science & Technology</p>
+        </body>
+        </html>
+        """
+
+        mail.send(msg)
+
+
+        studentcredCollection = db.studentcredentials
+        user={
+            "MailID":MailID,
+            "Password": password 
+        }
+        studentcredCollection.insert_one(user)
+        # return jsonify({"message":"SENT", "OTP":otp})
+    except Exception as e:
+        print(e)
+        return jsonify({"message":"NOT SENT"})
+
+    
+
+
+
+
     if result:
         return jsonify({"status":"Added new Student"})
     else:
@@ -272,7 +317,7 @@ def update_guides_students_data():
 
 
 
-@app.route('/login/<string:mailid>', methods=['POST'])
+@app.route('/stafflogin/<string:mailid>', methods=['POST'])
 def staffLogin(mailid):
     collection = db.staffcredentials
     data = request.json
@@ -288,6 +333,54 @@ def staffLogin(mailid):
             return jsonify({"message" : "Invalid Credentials"})
     else:
         return jsonify({"message" : "Account not found!"})
+    
+
+@app.route('/studentlogin/<string:mailid>', methods=['POST'])
+def studnetLogin(mailid):
+    collection = db.studentcredentials
+    data = request.json
+    print(data)
+    filter = {"MailID":mailid}
+    result = collection.find_one(filter)
+    print(result)
+    if result:
+        if result['Password']==data['password']:
+            print("----")
+            return jsonify({"message" : "Valid Credentials"})
+        else:
+            return jsonify({"message" : "Invalid Credentials"})
+    else:
+        return jsonify({"message" : "Account not found!"})
+    
+@app.route('/getStudentData', methods=["POST"])
+def getStudentData():
+    data = request.json
+    print(data)
+
+    if data["mailId"]:
+        studentCollection = db.regstudents
+        studentDetails = studentCollection.find_one({"mailId":data["mailId"]})
+
+        data = {
+            "name":studentDetails["name"],
+            "regNo":studentDetails["regNo"],
+            "phoneNo":studentDetails["phoneNo"],
+            "MentorName":studentDetails["selectedGuide"],
+            "section":studentDetails["section"],
+            "image":studentDetails["image"]
+        }
+        if studentDetails["messages"]:
+            LatestMessage= studentDetails["messages"][-1]
+        else:
+            LatestMessage = None
+        OldMessages=studentDetails["messages"][0:-1]
+        
+
+        return jsonify({"message":"SUCCESS", "StudentData":data, "LatestMessage":LatestMessage, "OldMessages":OldMessages})
+
+    else:
+
+        return jsonify({"message":"Something went wrong."})
 
 
 
