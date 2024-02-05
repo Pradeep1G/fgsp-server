@@ -272,7 +272,8 @@ def update_guides_students_data():
 
         try:
             # Upload the image to Google Drive and get the shareable link
-            folder_id = '1O3r9kS2dLr8D_tfJUF5fWX7dY0vB-wES'  # Replace with your actual Google Drive folder ID
+            # folder_id = '1O3r9kS2dLr8D_tfJUF5fWX7dY0vB-wES'  # Replace with your actual Google Drive folder ID
+            folder_id = '1uDPvi-PHyNtFDoDZZQDO0L8wMNGAZPea'  # Replace with your actual Google Drive folder ID
             google_drive_link = upload_to_google_drive(filename, folder_id)
 
             # Update the document by adding student_data to the students array
@@ -499,12 +500,55 @@ def sendMessageToAll():
     else:
         return jsonify({"message":"NOT SENT"})
 
+@app.route("/getStudentProfileData", methods=["POST"])
+def getStudentProfileData():
+    data = request.json
+    print(data)
 
-    
+    filter = {"University EMAIL ID": data['guideMail']}
 
+    result = {}
+
+    collection = db.guidesstudents
+    result2 = collection.find_one(filter)
+
+    for doc in result2['students']:
+        if int(doc['regNo'])==int(data['regNo']):
+            print(doc)
+            return jsonify({"StudentData":doc})
+            
+        
+    return jsonify({"message": "Success"})
+
+
+def authenticate():
+    creds = None
+    token_file = 'token.json'
+
+    # The file token.json stores the user's access and refresh tokens and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file)
+
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', ['https://www.googleapis.com/auth/drive']
+            )
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open(token_file, 'w') as token:
+            token.write(creds.to_json())
+
+    return creds 
 
 
 
 if __name__ == '__main__':
     app.debug = True
+    authenticate()
     app.run()
