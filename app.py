@@ -548,6 +548,317 @@ def authenticate():
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 23-4-2024 merged code form rakshitha
+
+@app.route("/events",methods=["POST"])
+def events():
+    data = request.json
+    regNo =  data["regNo"]
+    events = data["collection"]
+    db = client.studentsdb
+    collection = db.events
+
+    filter = {"regNo":regNo}
+    eventsData = list(collection.find(filter))
+    
+
+    events_conducted = {}
+
+    events_attended  = {}
+
+    for doc in eventsData:
+        for i in range(1,9):
+            semester = f'semester{i}'
+            events_conducted[semester] = []
+            for ev in doc["events_conducted"][semester]:
+                dic = {}
+                dic["eventName"] = ev["eventName"]
+                dic["eventType"] = ev["eventType"]
+                dic["eventSummary"] = ev["eventSummary"]
+                dic["bfileURL"] = ev["Brouchure"]["bfileURL"]
+                dic["bfileName"] = ev["Brouchure"]["bfileName"]
+                dic["brouchureURL"] = ev["Brouchure"]["brouchureURL"]
+                dic["fileURL"] = ev["certificate"]["fileURL"]
+                dic["fileName"] = ev["certificate"]["fileName"]
+                dic["certificateURL"] = ev["certificate"]["certificateURL"]
+                events_conducted[semester].append(dic)
+    for doc in eventsData:
+        for i in range(1,9):
+            semester = f'semester{i}'
+            events_attended[semester] = []
+            for evatt in doc["events_attended"][semester]:
+                dic = {}
+                dic["eventName"] = evatt["eventName"]
+                dic["eventType"] = evatt["eventType"]
+                dic["eventSummary"] = evatt["eventSummary"]
+                dic["bfileURL"] = evatt["Brouchure"]["bfileURL"]
+                dic["bfileName"] = evatt["Brouchure"]["bfileName"]
+                dic["brouchureURL"] = evatt["Brouchure"]["brouchureURL"]
+                dic["fileURL"] = evatt["certificate"]["fileURL"]
+                dic["fileName"] = evatt["certificate"]["fileName"]
+                dic["certificateURL"] = evatt["certificate"]["certificateURL"]
+                events_attended[semester].append(dic)
+
+
+    return jsonify({"message": "Success","eventsconducted":events_conducted,"eventsattended":events_attended})
+
+
+
+@app.route("/personalDetail", methods=["GET","POST"])
+def get_personal_details():
+    data = request.json
+    regNo = data["regNo"]
+    details = data["collection"]
+    db = client.studentsdb
+    collection = db.personalinfo
+    filter = {"regNo": regNo}
+
+    detailsData = list(collection.find(filter))
+    personal_details = []
+    parent_details = []
+    address = []
+    academic_details = []
+
+    for doc in detailsData:
+        # Accessing personal_details
+        if "personal_details" in doc:
+            pdet = doc["personal_details"]
+            dic = {}
+            dic["name"] = pdet.get("name", "")
+            dic["dep"] = pdet.get("dep", "")
+            dic["section"] = pdet.get("section", "")
+            dic["regNo"] = pdet.get("regNo", "")
+            dic["religion"] = pdet.get("religion", "")
+            dic["community"] = pdet.get("community", "")
+            dic["lifeGoal"] = pdet.get("lifeGoal", "")
+            dic["bloodGrp"] = pdet.get("bloodGrp", "")
+            dic["languages"] = pdet.get("languages", [])
+            personal_details.append(dic)
+
+        # Accessing parent_details
+        if "parent_details" in doc:
+            pdet = doc["parent_details"]
+            dic = {}
+            dic["fatherName"] = pdet.get("fatherName", "")
+            dic["fatherMail"] = pdet.get("fatherMail", "")
+            dic["fatherOcc"] = pdet.get("fatherOcc", "")
+            dic["fatherNo"] = pdet.get("fatherNo", "")
+            dic["motherName"] = pdet.get("motherName", "")
+            dic["motherMail"] = pdet.get("motherMail", "")
+            dic["motherOcc"] = pdet.get("motherOcc", "")
+            dic["motherNo"] = pdet.get("motherNo", "")
+            dic["guardianName"] = pdet.get("guardianName", "")
+            dic["guardianMail"] = pdet.get("guardianMail", "")
+            dic["guardianOcc"] = pdet.get("guardianOcc", "")
+            dic["guardianNo"] = pdet.get("guardianNo", "")
+            parent_details.append(dic)
+
+        # Accessing address
+        if "address" in doc:
+            pdet = doc["address"]
+            dic = {}
+            dic["permanentAdd"] = pdet.get("permanentAdd", "")
+            dic["communicationAdd"] = pdet.get("communicationAdd", "")
+            dic["phoneNo"] = pdet.get("phoneNo", "")
+            dic["alterNo"] = pdet.get("alterNo", "")
+            if "hosteller" in pdet and pdet["hosteller"]:
+                dic["hostelName"] = pdet.get("hostelName", "")
+                dic["hostelNo"] = pdet.get("hostelNo", "")
+            address.append(dic)
+
+        # Accessing academic_details
+        if "academic_details" in doc:
+            pdet = doc["academic_details"]
+            dic = {}
+            dic["previousInst"] = pdet.get("previousInst", "")
+            dic["tenthper"] = pdet.get("tenthper", "")
+            dic["twelfthper"] = pdet.get("twelfthper", "")
+            academic_details.append(dic)
+
+    return jsonify({"personaldetails": personal_details, "parentdetails": parent_details, "address": address, "academicdetails": academic_details})
+
+
+
+
+
+@app.route("/additionalCredDetail", methods=["POST"])
+def additionalCredDetail():
+    data = request.json
+    regNo = data["regNo"]
+    additionCred = data["collection"]
+    db = client.studentsdb
+    collection = db.additionalCred
+
+    curricular_details = {}
+    cocurricular_details = {}
+    extra_details = []
+    achievements_details = []
+    filter = {"regNo": regNo}
+
+    additionCredData = list(collection.find(filter))
+
+    for doc in additionCredData:
+        for i in range(1, 9):
+            semester = f'semester{i}'
+            curricular_details[semester] = []
+            for act in doc["curricular"][semester]:
+                dic = {}
+                dic["activityName"] = act["activityName"]
+                dic["activityType"] = act["activityType"]
+                dic["ifOther"] = act["ifOther"]
+                dic["bfileName"] = act["brouchure"]["bfileName"]
+                dic["fileName"] = act["Report"]["fileName"]
+                curricular_details[semester].append(dic)
+
+    for doc in additionCredData:
+        for i in range(1, 9):
+            semester = f'semester{i}'
+            cocurricular_details[semester] = []
+            for act in doc["coCurricular"][semester]:
+                dic = {}
+                dic["activityName"] = act["activityName"]
+                dic["activityType"] = act["activityType"]
+                dic["ifOther"] = act["ifOther"]
+                dic["bfileName"] = act["brouchure"]["bfileName"]
+                dic["fileName"] = act["Report"]["fileName"]
+                cocurricular_details[semester].append(dic)
+
+    for doc in additionCredData:
+        for event in doc["extraCredits"]:
+            dic = {}
+            dic["sNo"] = event["sNo"]
+            dic["orgName"] = event["orgName"]
+            dic["courseName"] = event["courseName"]
+            dic["year"] = event["year"]
+            dic["duration"] = event["duration"]
+            dic["fileName"] = event["certificate"]["fileName"]
+            extra_details.append(dic)
+
+    for doc in additionCredData:
+        for ach in doc["achievements"]:
+            dic = {}
+            dic["typeOfAch"] = ach["typeOfAch"]
+            dic["description"] = ach["description"]
+            achievements_details.append(dic)
+
+
+    return jsonify({"message": "Success", "curricular": curricular_details, "cocurricular": cocurricular_details, "extracredits": extra_details, "achievements": achievements_details})
+
+
+
+@app.route("/resultDetail", methods = ["POST"])
+def resultDetail():
+    data = request.json
+    regNo =  data["regNo"]
+    result = data["collection"]
+    db = client.studentsdb
+    collection = db.results
+    filter = {"regNo":regNo}
+
+    results_details = []
+    
+    resultData = list(collection.find(filter))
+
+    for doc in resultData:
+            dic = {}
+            dic["Semester 1"]= doc["Semester 1"]
+            dic["Semester 2"]= doc["Semester 2"]
+            dic["Semester 3"]= doc["Semester 3"]
+            dic["Semester 4"]= doc["Semester 4"]
+            dic["Semester 5"]= doc["Semester 5"]
+            dic["Semester 6"]= doc["Semester 6"]
+            dic["Semester 7"]= doc["Semester 7"]
+            dic["Semester 8"]= doc["Semester 8"]
+            results_details.append(dic)
+    return ({"results":results_details})
+
+@app.route("/insert_meeting", methods=["POST"])
+def insert_meeting():
+    data = request.json
+    regNo = data["regNo"]
+    mentor = data["Meeting"]
+    db = client.studentsdb
+    collection = db.MentorMeeting
+
+    document = {
+        "regNo": regNo,
+        "Meeting": mentor
+    }
+
+    try:
+        result = collection.insert_one(document)
+        inserted_id = str(result.inserted_id)
+        return jsonify({"message": "meeting data inserted successfully", "inserted_id": inserted_id}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
+
+@app.route("/insert_remarks", methods=["POST"])
+def insert_remarks():
+    data = request.json
+    regNo = data["regNo"]
+    remarks = data["remarksInfo"]
+    db = client.studentsdb
+    collection = db.remarks
+
+    document = {
+        "regNo": regNo,
+        "remarksInfo": remarks
+    }
+
+    try:
+        result = collection.insert_one(document)
+        inserted_id = str(result.inserted_id)
+        return jsonify({"message": "Remarks data inserted successfully", "inserted_id": inserted_id}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/permissionDetail", methods = ["POST"])
+def permissionDetail():
+    data = request.json
+    regNo = data["regNo"]
+    result = data["collection"]
+    db = client.studentsdb
+    collection = db.permission
+    filter = {"regNo":regNo}
+
+    permission_details = []
+    
+    permissionData = list(collection.find(filter))
+
+    for doc in permissionData:
+            dic = {}
+            dic["personalinfo"]= doc["personalinfo"]
+            dic["eventsinfo"]= doc["eventsinfo"]
+            dic["resultsinfo"]= doc["resultsinfo"]
+            dic["additionalinfo"]= doc["additionalinfo"]
+            permission_details.append(dic)
+    return ({"permission":permission_details})
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
     app.debug = True
     authenticate()
