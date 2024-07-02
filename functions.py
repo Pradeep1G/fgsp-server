@@ -226,9 +226,9 @@ def update_guides_students_data(stData, stMentorData):
 # Example usage
 # file_path = 'AllStudentsData.xlsx'
 # sheet_name = 'Students_Data'  # Change this to the actual sheet name
-# for i in range(82,101):
+# for i in range(1562,1570):
 #     row_number = i  # Change this to the desired row number
-
+#     print(i)
 #     stData = get_entire_row(file_path, sheet_name, row_number)
 #     stMentorData = get_entire_row('Mentor Mentee.xlsx', sheet_name, row_number)
 
