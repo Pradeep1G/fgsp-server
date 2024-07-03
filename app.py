@@ -514,32 +514,42 @@ def sendParentMessage(mailId):
         return jsonify({"error": str(e)}), 500
     
 @app.route("/sendMessageToAll", methods=["POST"])
-def sendMessageToAll():
-
-    data = request.json
-
-
-
-    collection = db.regstudents
-    # filter_query = {"mailId":mailid}
-    update_query = {
-        "$push" : {
-            "messages" : {
-                data['date'] : data["message"]
-            }
-        }
-    }
-    # result = collection.update_one(filter_query, update_query)
-
-    for doc in data['mailIds']:
-        print(doc["mailId"])
-        filter_query = {"mailId":doc["mailId"]}
-        result = collection.update_one(filter_query, update_query)
+def send_message_to_all():
+    sdb = client.studentsdb
+    collection = sdb.DupMessages
+    try:
+        data = request.json
+        print(data)
+        if not data or "message" not in data or "date" not in data or "GuideMailId" not in data:
+            return jsonify({"error": "Invalid message data format"}), 400
         
+        message = data["message"]
+        formatted_date = data["date"]
+        guide_mail_id = data["GuideMailId"]
 
+        # Fetch all students associated with the guideMailId
+        filter_query = {"selectedGuideMailId": guide_mail_id}
+        students = collection.find(filter_query)
 
+        # Send message to each student
+        for student in students:
+            mail_id = student.get("mailId", "")
+            if mail_id:
+                # Update the student's document in MongoDB
+                date_str = formatted_date.split()[0]  # Extract date part
+                time_str = formatted_date.split()[1]  # Extract time part
+                update_query = {
+                    "$set": {f"messages.{date_str}.{time_str}": message}
+                }
+                result = collection.update_one({"mailId": mail_id}, update_query, upsert=True)
 
-    print(data)
+                if result.modified_count == 0 and not result.upserted_id:
+                    return jsonify({"message": "NOT SENT"}), 500
+        
+        return jsonify({"message": "SENT"}), 200
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
     if result.modified_count > 0:
@@ -1680,7 +1690,7 @@ FOLDER_ID_ATTENTED = '1j-BxGZqy4A4ZOqezAtKxLcralIucr9ol'
 @app.route('/studentdashboard/<string:studentId>/AddEvents', methods=['POST'])
 def add_event(studentId):
     db = client.studentsdb
-    collection = db.events
+    collection = db.DupEvents
     brouchere_path = None
     certificate_path = None
     try:
