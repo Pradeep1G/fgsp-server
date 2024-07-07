@@ -345,7 +345,7 @@ def staffLogin(mailid):
 
 @app.route('/studentlogin/<string:mailid>', methods=['POST'])
 def studnetLogin(mailid):
-    collection = db.studentcredentials
+    collection = db.studentLogin
     data = request.json
     print(data)
     filter = {"MailID":mailid}
@@ -447,21 +447,19 @@ def Send_otp(mailid):
 @app.route("/sendMessage/<mailId>", methods=["POST"])
 def sendMessage(mailId):
     sdb = client.studentsdb  # Connect to the database
-    collection = sdb.DupMessages
-    print(mailId)
+    collection = sdb.Messages
     try:
         data = request.json
         if not data or "message" not in data or "date" not in data:
             return jsonify({"error": "Invalid message data format"}), 400
-        print(data)
-        # Extract the date and time
-        date_str = data["date"]
-        print(date_str)
-        time_str = datetime.now().strftime('%H:%M:%S')
-        print(time_str)
+        
+        # Extract the date and time from the request data
+        datetime_str = data["date"]
+        date_str, time_str = datetime_str.split(" ")
+
         # Prepare message data
         message = data["message"]
-        print("hello")
+        
         # Define the filter and update queries
         filter_query = {"mailId": mailId}
         update_query = {
@@ -482,7 +480,7 @@ def sendMessage(mailId):
 @app.route("/sendParentMessage/<mailId>", methods=["POST"])
 def sendParentMessage(mailId):
     sdb = client.studentsdb  # Connect to the database
-    collection = sdb.DupParentMessages
+    collection = sdb.ParentMessages
     print(mailId)
     try:
         data = request.json
@@ -490,8 +488,8 @@ def sendParentMessage(mailId):
             return jsonify({"error": "Invalid message data format"}), 400
         
         # Extract the date and time
-        date_str = data["date"]
-        time_str = datetime.now().strftime('%H:%M:%S')
+        datetime_str = data["date"]
+        date_str, time_str = datetime_str.split(" ")
         
         # Prepare message data
         Parentmessages = data["message"]
@@ -516,7 +514,7 @@ def sendParentMessage(mailId):
 @app.route("/sendMessageToAll", methods=["POST"])
 def send_message_to_all():
     sdb = client.studentsdb
-    collection = sdb.DupMessages
+    collection = sdb.Messages
     try:
         data = request.json
         print(data)
@@ -628,7 +626,7 @@ def events():
     data = request.json
     regNo =  data["regNo"]
     db = client.studentsdb
-    collection = db.events
+    collection = db.Events
 
     filter = {"regNo":regNo}
     eventsData = list(collection.find(filter))
@@ -681,7 +679,7 @@ def events_data():
     data = request.json
     regNo = data["regNo"]  # Corrected to use "regNo"
     db = client.studentsdb
-    collection = db.events
+    collection = db.Events
     print(regNo)
     filter = {"regNo": regNo}
     eventsData = list(collection.find(filter))
@@ -880,7 +878,7 @@ def resultDetail():
     regNo =  data.get("regNo",0)
     # result = data["collection"]
     db = client.studentsdb
-    collection = db.results
+    collection = db.Results
     filter = {"regNo":str(regNo)}
     print(filter)
 
@@ -1044,7 +1042,7 @@ FOLDER_ID = '11aTPM9aw5aRfBEl3xkZnUPjE3-UjvTYQ'
 @app.route("/student/insertSemResult", methods=["POST"])
 def insert_sem_result():
     db = client.studentsdb
-    result_collection = db.results
+    result_collection = db.Results
     try:
         data = request.json
         print(data)
@@ -1151,7 +1149,7 @@ def get_remarks(reg_no):
     
     # Ensure correct database and collection
     db = client.studentsdb
-    remarks_collection = db.remarks
+    remarks_collection = db.Remarks
     
     try:
         # Find the document with the given registration number
@@ -1178,9 +1176,9 @@ def get_remarks(reg_no):
 def insert_remarks():
     data = request.json
     regNo = data["regNo"]
-    new_remark = data["remarksInfo"][0]
+    new_remark = data["remarksInfo"][0]  # The new remark with the provided date
     db = client.studentsdb
-    collection = db.remarks
+    collection = db.Remarks
 
     try:
         # Find the document by regNo
@@ -1212,13 +1210,13 @@ def insert_remarks():
 @app.route("/get_meetings/<string:reg_no>", methods=["GET"])
 def get_meetings_by_reg_no(reg_no):
     db = client.studentsdb
-    collection = db.MentorMeeting
+    collection = db.MentorMeetings
     try:
         # Query the collection for the document with the matching regNo
         meeting_data = collection.find_one({"regNo": str(reg_no)})
 
-        if meeting_data:
-            print("meetings:",meeting_data)
+        if meeting_data and meeting_data.get("meetings") is not None:
+            print("meetings:", meeting_data)
             return jsonify({"meetings": meeting_data.get("meetings", [])}), 200
         else:
             return jsonify({"message": "No meetings found for the given registration number"}), 404
@@ -1232,7 +1230,7 @@ def insert_meeting():
     regNo = data["regNo"]
     new_meeting = data["Meeting"]
     db = client.studentsdb
-    collection = db.MentorMeeting
+    collection = db.MentorMeetings
 
     try:
         # Find the document by regNo
@@ -1263,7 +1261,7 @@ def get_messages():
     data = request.json
     mail_id = data.get('mailId')
     db = client.studentsdb 
-    collection = db.DupMessages
+    collection = db.Messages
     student_data = collection.find_one({'mailId': mail_id})
 
     if student_data:
@@ -1288,7 +1286,7 @@ def getParentmessages():
     mail_id = data.get('mailId')
     db = client.studentsdb 
   
-    collection = db.DupParentMessages
+    collection = db.ParentMessages
     student_data = collection.find_one({'mailId': mail_id})
 
     if student_data:
@@ -1690,7 +1688,7 @@ FOLDER_ID_ATTENTED = '1j-BxGZqy4A4ZOqezAtKxLcralIucr9ol'
 @app.route('/studentdashboard/<string:studentId>/AddEvents', methods=['POST'])
 def add_event(studentId):
     db = client.studentsdb
-    collection = db.DupEvents
+    collection = db.Events
     brouchere_path = None
     certificate_path = None
     try:
@@ -1778,7 +1776,7 @@ def get_student_register_numbers_by_email():
         db = client.jgspdb
         collection = db.guidesstudents
         db1 = client.studentsdb
-        events_collection = db1.events
+        events_collection = db1.Events
         
         document = collection.find_one({'University EMAIL ID': university_email})
         register_numbers_for_Events = []
