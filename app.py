@@ -348,11 +348,11 @@ def studnetLogin(mailid):
     collection = db.studentLogin
     data = request.json
     print(data)
-    filter = {"MailID":mailid}
+    filter = {"mailID":mailid}
     result = collection.find_one(filter)
     print(result)
     if result:
-        if result['Password']==data['password']:
+        if result['password']==data['password']:
             print("----")
             access_token_student = create_access_token(identity=mailid)
             print("----" ,access_token_student)
