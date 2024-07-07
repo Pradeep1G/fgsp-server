@@ -348,7 +348,7 @@ def studnetLogin(mailid):
     collection = db.studentLogin
     data = request.json
     print(data)
-    filter = {"mailID":mailid}
+    filter = {"mailId":mailid}
     result = collection.find_one(filter)
     print(result)
     if result:
