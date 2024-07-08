@@ -1838,7 +1838,7 @@ def download_events():
         db = client.jgspdb
         collection = db.guidesstudents
         db1 = client.studentsdb
-        events_collection = db1.events
+        events_collection = db1.Events
         student_collection = db.regstudents
 
         document = collection.find_one({'University EMAIL ID': university_email})
